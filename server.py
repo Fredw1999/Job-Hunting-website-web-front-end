@@ -13,7 +13,7 @@ import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response
-
+import psycopg2
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 
@@ -30,8 +30,8 @@ app = Flask(__name__, template_folder=tmpl_dir)
 #     DATABASEURI = "postgresql://zy2431:123123@34.73.36.248/project1"
 #
 # Modify these with your own credentials you received from TA!
-DATABASE_USERNAME = ""
-DATABASE_PASSWRD = ""
+DATABASE_USERNAME = "w.jiahao"
+DATABASE_PASSWRD = "6670"
 DATABASE_HOST = "34.148.107.47" # change to 34.28.53.86 if you used database 2 for part 2
 DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HOST}/project1"
 
@@ -39,7 +39,7 @@ DATABASEURI = f"postgresql://{DATABASE_USERNAME}:{DATABASE_PASSWRD}@{DATABASE_HO
 #
 # This line creates a database engine that knows how to connect to the URI above.
 #
-engine = create_engine(DATABASEURI)
+engine = create_engine(DATABASEURI,future=True)
 
 #
 # Example of running queries in your database
