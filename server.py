@@ -53,8 +53,8 @@ with engine.connect() as conn:
 	)
 	"""
 	res = conn.execute(text(create_table_command))
-	insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
-	res = conn.execute(text(insert_table_command))
+	#insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
+	#res = conn.execute(text(insert_table_command))
 	# you need to commit for create, insert, update queries to reflect
 	conn.commit()
 
@@ -188,10 +188,25 @@ def add():
 	return redirect('/')
 
 
-@app.route('/login')
+@app.route('/login',methods=['GET'])
 def login():
-	abort(401)
-	this_is_never_executed()
+    userid=request.form['userid']
+    password=request.form['password']
+    
+    select_query = f"SELECT user_id, password from p_user where user_id={userid} "
+    cursor = g.conn.execute(text(select_query))
+    userid = []
+    password_ls= []
+    for result in cursor:
+        userid.append(result[0])
+        password.append(result[1])
+    cursor.close()
+    
+    if len(userid)==0 or password_ls[0]!=password:
+        abort(401)
+    else:
+        return redirect('/')
+
 
 
 if __name__ == "__main__":
@@ -200,7 +215,7 @@ if __name__ == "__main__":
 	@click.command()
 	@click.option('--debug', is_flag=True)
 	@click.option('--threaded', is_flag=True)
-	@click.argument('HOST', default='0.0.0.0')
+	@click.argument('HOST', default='127.0.0.1')
 	@click.argument('PORT', default=8111, type=int)
 	def run(debug, threaded, host, port):
 		"""
