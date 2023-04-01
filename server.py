@@ -45,18 +45,19 @@ engine = create_engine(DATABASEURI,future=True)
 # Example of running queries in your database
 # Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
 #
-with engine.connect() as conn:
-	create_table_command = """
-	CREATE TABLE IF NOT EXISTS test (
-		id serial,
-		name text
-	)
-	"""
-	res = conn.execute(text(create_table_command))
+'''with engine.connect() as conn:
+	#create_table_command = """
+	#CREATE TABLE IF NOT EXISTS test (
+	#	id serial,
+	#	name text
+	#)
+	#"""
+	#res = conn.execute(text(create_table_command))
 	#insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
 	#res = conn.execute(text(insert_table_command))
 	# you need to commit for create, insert, update queries to reflect
 	conn.commit()
+	'''
 
 
 @app.before_request
@@ -99,119 +100,48 @@ def teardown_request(exception):
 # 
 # see for routing: https://flask.palletsprojects.com/en/1.1.x/quickstart/#routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-#
-@app.route('/')
-def index():
-	"""
-	request is a special object that Flask provides to access web request information:
-
+'''
 	request.method:   "GET" or "POST"
 	request.form:     if the browser submitted a form, this contains the data in the form
 	request.args:     dictionary of URL arguments, e.g., {a:1, b:2} for http://localhost?a=1&b=2
+'''
+#default login page
+@app.route('/')
+def login():
+    return render_template('login.html')
 
-	See its API: https://flask.palletsprojects.com/en/1.1.x/api/#incoming-request-data
-	"""
+#register page
+@app.route('/regist')
+def regist():
+    return render_template('regist.html')
 
-	# DEBUG: this is debugging code to see what request looks like
-	print(request.args)
-
-
-	#
-	# example of a database query
-	#
-	select_query = "SELECT name from test"
-	cursor = g.conn.execute(text(select_query))
-	names = []
-	for result in cursor:
-		names.append(result[0])
-	cursor.close()
-
-	#
-	# Flask uses Jinja templates, which is an extension to HTML where you can
-	# pass data to a template and dynamically generate HTML based on the data
-	# (you can think of it as simple PHP)
-	# documentation: https://realpython.com/primer-on-jinja-templating/
-	#
-	# You can see an example template in templates/index.html
-	#
-	# context are the variables that are passed to the template.
-	# for example, "data" key in the context variable defined below will be 
-	# accessible as a variable in index.html:
-	#
-	#     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-	#     <div>{{data}}</div>
-	#     
-	#     # creates a <div> tag for each element in data
-	#     # will print: 
-	#     #
-	#     #   <div>grace hopper</div>
-	#     #   <div>alan turing</div>
-	#     #   <div>ada lovelace</div>
-	#     #
-	#     {% for n in data %}
-	#     <div>{{n}}</div>
-	#     {% endfor %}
-	#
-	context = dict(data = names)
-
-
-	#
-	# render_template looks in the templates/ folder for files.
-	# for example, the below file reads template/index.html
-	#
-	return render_template("index.html", **context)
-
-#
-# This is an example of a different path.  You can see it at:
-# 
-#     localhost:8111/another
-#
-# Notice that the function name is another() rather than index()
-# The functions for each app.route need to have different names
-#
+#test redirect
 @app.route('/another')
 def another():
 	return render_template("another.html")
 
-
-# Example of adding new data to the database
-@app.route('/add', methods=['POST'])
-def add():
-	# accessing form inputs from user
-	name = request.form['name']
-	
-	# passing params in for each variable into query
-	params = {}
-	params["new_name"] = name
-	g.conn.execute(text('INSERT INTO test(name) VALUES (:new_name)'), params)
-	g.conn.commit()
-	return redirect('/')
-
-
-@app.route('/login',methods=['GET'])
-def login():
-    userid=request.form['userid']
-    password=request.form['password']
-    
-    select_query = f"SELECT user_id, password from p_user where user_id={userid} "
-    cursor = g.conn.execute(text(select_query))
-    userid = []
-    password_ls= []
-    for result in cursor:
-        userid.append(result[0])
-        password.append(result[1])
-    cursor.close()
-    
-    if len(userid)==0 or password_ls[0]!=password:
-        abort(401)
-    else:
-        return redirect('/')
+@app.route('/login', methods=['GET', 'POST'])
+def getLoginRequest():
+    if request.method == 'POST':
+        user_id = request.form['userid']
+        password = request.form['password']
+        if user_id and password:
+            # 使用参数化查询
+            sql_select = "SELECT user_id, password FROM p_user WHERE user_id=:user_id AND password=:password;"
+            cursor = g.conn.execute(text(sql_select).bindparams(user_id=user_id, password=password))
+            results = cursor.fetchall()
+            cursor.close()
+            if len(results) == 1:
+                return redirect('/another')
+            else:
+                return '用户名或密码不正确'
+    return render_template('login.html')
 
 
 
 if __name__ == "__main__":
 	import click
-
+	app.debug = True
 	@click.command()
 	@click.option('--debug', is_flag=True)
 	@click.option('--threaded', is_flag=True)
