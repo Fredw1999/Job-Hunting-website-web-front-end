@@ -12,11 +12,11 @@ import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
-from flask import Flask, request, render_template, g, redirect, Response
+from flask import Flask, request, render_template, g, redirect, Response,  session
 import psycopg2
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
-
+app.secret_key = 'cs4111'
 
 #
 # The following is a dummy URI that does not connect to a valid database. You will need to modify it to connect to your Part 2 database in order to use the data.
@@ -113,7 +113,7 @@ def login():
 #register page
 @app.route('/regist')
 def regist():
-    return render_template('regist.html')
+    return render_template('register.html')
 
 #test redirect
 @app.route('/another')
@@ -122,20 +122,84 @@ def another():
 
 @app.route('/login', methods=['GET', 'POST'])
 def getLoginRequest():
-    if request.method == 'POST':
-        user_id = request.form['userid']
-        password = request.form['password']
-        if user_id and password:
-            # 使用参数化查询
-            sql_select = "SELECT user_id, password FROM p_user WHERE user_id=:user_id AND password=:password;"
-            cursor = g.conn.execute(text(sql_select).bindparams(user_id=user_id, password=password))
-            results = cursor.fetchall()
-            cursor.close()
-            if len(results) == 1:
-                return redirect('/another')
-            else:
-                return '用户名或密码不正确'
-    return render_template('login.html')
+	if request.method == 'POST':
+		user_id = request.form['userid']
+		password = request.form['password']
+		if user_id and password:
+			# 使用参数化查询
+			sql_select = "SELECT user_id, password FROM p_user WHERE user_id=:user_id AND password=:password;"
+			cursor = g.conn.execute(text(sql_select).bindparams(user_id=user_id, password=password))
+			results = cursor.fetchall()
+			cursor.close()
+			if len(results) == 1:
+				session['user_id']=user_id
+				return redirect('/another')
+			else:
+				return '用户名或密码不正确'
+	return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+	if request.method == 'POST':
+		user_id = request.form.get('user_id')
+		password = request.form.get('password')
+		email = request.form.get('email')
+		first_name = request.form.get('first_name')
+		last_name = request.form.get('last_name')
+		street = request.form.get('street')
+		apt_number = request.form.get('apt_number')
+		city = request.form.get('city')
+		state = request.form.get('state')
+		zip = request.form.get('zip')
+		phone_number = request.form.get('phone_number')
+		date_of_birth = request.form.get('date_of_birth')
+		age = request.form.get('age')
+		user_type = request.form.get('user_type')
+		register_date = request.form.get('register_date')
+
+	# Validate input fields
+	if not all([user_id, password, email, first_name, last_name, street, city, state, zip, phone_number, date_of_birth, age, user_type]):
+		return "Please Fill All Information"
+
+	# Check if the user_id already exists
+	check_user_id = text("SELECT user_id FROM p_user WHERE user_id = :user_id")
+	user_id_exists = g.conn.execute(check_user_id.bindparams(user_id=user_id)).fetchone()
+
+	if user_id_exists:
+		return "User_id already exist, please change."
+
+	# Save common user information to the 'p_user' table
+	insert_p_user =insert_p_user = text("INSERT INTO p_user (user_id, password, email, first_name, last_name, street, apt_number, city, state, zip, phone_number, date_of_birth, age, register_date) VALUES (:user_id, :password, :email, :first_name, :last_name, :street, :apt_number, :city, :state, :zip, :phone_number, :date_of_birth, :age, :register_date)")
+	g.conn.execute(insert_p_user.bindparams(user_id=user_id, password=password, email=email, first_name=first_name, last_name=last_name, street=street, apt_number=apt_number, city=city, state=state, zip=zip, phone_number=phone_number, date_of_birth=date_of_birth, age=age, register_date=register_date))
+	if user_type == 'employee':
+		# Save employee-specific information to the 'employees' table
+		# Add your employee-specific fields here and adjust the INSERT statement accordingly
+		skills = request.form.get('skills')
+		targeted_position = request.form.get('targeted_position')
+		expected_salary = request.form.get('expected_salary')
+		intern = request.form.get('intern')
+		resume = request.form.get('resume')
+		if not all([skills, targeted_position, expected_salary, intern, resume]):
+			return "Please Fill All Information"
+		insert_employee = text("INSERT INTO job_seeker (user_id, skills, targeted_position, expected_salary, looking_for_intern, resume) VALUES (:user_id, :skills, :targeted_position, :expected_salary, :intern, :resume);")
+		g.conn.execute(insert_employee.bindparams(user_id=user_id, skills=skills, expected_salary=expected_salary, targeted_position=targeted_position, intern=intern, resume=resume))
+
+	elif user_type == 'employer':
+		# Save employer-specific information to the 'employers' table
+		# Add your employer-specific fields here and adjust the INSERT statement accordingly
+		title = request.form.get('title')
+		company_name = request.form.get('company_name')
+		industry = request.form.get('industry')
+		average_salary = request.form.get('average_salary')
+		website = request.form.get('website')
+		if not all([title, company_name, industry, average_salary, website]):
+			return "Please Fill All Information"
+		
+		insert_employer = text("INSERT INTO employer (user_id, title, company_name, industry, average_salary, website) VALUES (:user_id, :title, :company_name, :industry, :average_salary, :website);")
+		g.conn.execute(insert_employer.bindparams(user_id=user_id, title=title, company_name=company_name, industry=industry, average_salary=average_salary, website=website))
+
+	# Redirect to the login page after successful registration
+	return redirect('/login')
 
 
 

@@ -1,10 +1,77 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Registration</title>
+        <style>
+          .hidden {
+            display: none;
+          }
+        </style>
+        <script>
+          function showFields() {
+            var employeeFields = document.getElementById("employeeFields");
+            var employerFields = document.getElementById("employerFields");
+            var userType = document.querySelector('input[name="user_type"]:checked').value;
+            if (userType === "employee") {
+              employeeFields.classList.remove("hidden");
+              employerFields.classList.add("hidden");
+            } else {
+              employeeFields.classList.add("hidden");
+              employerFields.classList.remove("hidden");
+            }
+          }
 
-<html >
-    <body>
-        <form method="get" action='/registuser'>
-            <label>用户名：<input type="text" name="user" value=""></label>
-            <label>密码：<input type="password" name="password" value=""></label>
-            <input type="submit" value="注册">
-        </form>
-    </body>
+          function generateRegisterDate() {
+            const currentDate = new Date();
+            const dateTimeString = currentDate.toISOString().slice(0, 19);
+            document.getElementById("register_date").value = dateTimeString;
+        }
+        </script>
+      </head>
+  <body>
+    <h1>Register</h1>
+    <form method="post" action="/register" onsubmit="generateRegisterDate()">
+      <label>User ID: <input type="text" name="user_id" required></label><br>
+      <label>Password: <input type="password" name="password" required></label><br>
+      <label>Email: <input type="text" name="email" required></label><br>
+      <label>First Name: <input type="text" name="first_name" required></label><br>
+      <label>Last Name: <input type="text" name="last_name" required></label><br>
+      <label>Street: <input type="text" name="street" required></label><br>
+      <label>Apt Number: <input type="number" name="apt_number"></label><br>
+      <label>City: <input type="text" name="city" required></label><br>
+      <label>State: <input type="text" name="state" required></label><br>
+      <label>ZIP Code: <input type="text" name="zip" required></label><br>
+      <label>Phone Number: <input type="text" name="phone_number" required></label><br>
+      <label>Date of Birth: <input type="date" name="date_of_birth" required></label><br>
+      <label>Age: <input type="number" name="age" required></label><br>
+      
+      <label>User Type:</label><br>
+      <input type="radio" id="employee" name="user_type" value="employee" required onclick="showFields()">
+      <label for="employee">Employee</label><br>
+      <input type="radio" id="employer" name="user_type" value="employer" onclick="showFields()">
+      <label for="employer">Employer</label><br>
+      
+      <div id="employeeFields" class="hidden">
+        <h3>Employee Information</h3>
+        <label>Skills: <input type="text" name="skills"></label><br>
+        <label>Targeted_position: <input type="text" name="targeted_position"></label><br>
+        <label>Expected_salary: <input type="text" name="expected_salary"></label><br>
+        <label>looking_for_intern(Yes or No): <input type="text" name="intern"></label><br>
+        <label>Resume: <input type="text" name="resume"></label><br>
+        
+      </div>
+      
+      <div id="employerFields" class="hidden">
+        <h3>Employer Information</h3>
+        <label>Title: <input type="text" name="title"></label><br>
+        <label>Company_Name: <input type="text" name="company_name"></label><br>
+        <label>Industry: <input type="text" name="industry"></label><br>
+        <label>Average_salary: <input type="text" name="average_salary"></label><br>
+        <label>Website: <input type="text" name="website"></label><br>
+        
+      </div>
+      <input type="hidden" id="register_date" name="register_date" value="">
+      <input type="submit" value="Register">
+    </form>
+  </body>
 </html>
