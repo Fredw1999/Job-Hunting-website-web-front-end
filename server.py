@@ -8,6 +8,7 @@ Go to http://localhost:8111 in your browser.
 A debugger such as "pdb" may be helpful for debugging.
 Read about it online.
 """
+from datetime import datetime
 import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
@@ -250,6 +251,27 @@ def blog():
 
     # Render the blog page
     return render_template('blog.html', recommended_blogs=recommended_blogs, liked_blogs=liked_blogs)
+
+
+@app.route('/blog/like', methods=['POST'])
+def like_blog():
+    user_id = session['user_id']
+    blog_id = request.form.get('blog_id')
+    
+    if not all([user_id, blog_id]):
+        return "Error"
+    sql_check = text("SELECT COUNT(*) FROM likes WHERE blog_id = :blog_id AND user_id = :user_id;")
+    result = g.conn.execute(sql_check.bindparams(blog_id=blog_id, user_id=user_id)).scalar()
+    
+    if result > 0:
+        return "You have already liked this blog."    
+    liked_time = datetime.utcnow()
+    sql_insert = text("INSERT INTO likes (blog_id, user_id, liked_time) VALUES (:blog_id, :user_id, :liked_time);")
+    g.conn.execute(sql_insert.bindparams(blog_id=blog_id, user_id=user_id, liked_time=liked_time))
+    g.conn.commit()
+    
+    return redirect('/blog')
+
 
 
 if __name__ == "__main__":

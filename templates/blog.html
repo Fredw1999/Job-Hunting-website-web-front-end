@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <title>Blog</title>
-  </head>
+    <head>
+        <title>Blog</title>
+    </head>
   <body>
     <h1>Blog</h1>
     <h2>Recommended</h2>
@@ -21,7 +21,10 @@
             <div>
                 Content:{{blog[4]}}
             </div>
-            <button class="like-btn" data-blog-id="{{blog.id}}">Like</button>
+            <form method="post" action="/blog/like">
+                <input type="hidden" name="blog_id" value="{{blog[0]}}">
+                <input type="submit" value="Like">
+            </form>
         
         {% endfor %}
       </ul>
