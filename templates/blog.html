@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Blog</title>
+  </head>
+  <body>
+    <h1>Blog</h1>
+    <h2>Recommended</h2>
+    {% if recommended_blogs %}
+      <ul>
+        {% for blog in recommended_blogs %}
+            <div>
+                Title:{{blog[1]}}
+            </div>
+            <div>    
+                Author:{{blog[2]}}
+            </div>
+            <div>
+                Keywords:{{blog[3]}}
+            </div>    
+            <div>
+                Content:{{blog[4]}}
+            </div>
+            <button class="like-btn" data-blog-id="{{blog.id}}">Like</button>
+        
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No recommended blogs found.</p>
+    {% endif %}
+    
+    <h2>Search</h2>
+    <form method="get" action="/blog/search">
+      <input type="text" name="keyword">
+      <input type="submit" value="Search">
+    </form>
+    
+    <h2>Liked Blogs</h2>
+    {% if liked_blogs %}
+      <ul>
+        {% for blog in liked_blogs %}
+        <div>
+            Title:{{blog[1]}}
+        </div>
+        <div>    
+            Author:{{blog[2]}}
+        </div>
+        <div>
+            Keywords:{{blog[3]}}
+        </div>    
+        <div>
+            Content:{{blog[4]}}
+        </div>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>You haven't liked any blogs yet.</p>
+    {% endif %}
+    
+    <h2>Post Blog</h2>
+    <form method="post" action="/blog">
+      <label>Title:</label>
+      <input type="text" name="title"><br>
+      <label>Keywords:</label>
+      <input type="text" name="keywords"><br>
+      <label>Author_name:</label>
+      <input type="text" name="author_name"<br> 
+      <label>Content:</label><br>
+      <textarea name="content" rows="10" cols="50"></textarea><br>
+      <input type="submit" value="Post">
+    </form>
+    
+  </body>
+</html>

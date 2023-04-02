@@ -126,16 +126,30 @@ def getLoginRequest():
 		user_id = request.form['userid']
 		password = request.form['password']
 		if user_id and password:
-			# 使用参数化查询
+			# sql
 			sql_select = "SELECT user_id, password FROM p_user WHERE user_id=:user_id AND password=:password;"
 			cursor = g.conn.execute(text(sql_select).bindparams(user_id=user_id, password=password))
 			results = cursor.fetchall()
 			cursor.close()
 			if len(results) == 1:
-				session['user_id']=user_id
+				sql_select_job_seeker = "SELECT user_id FROM job_seeker WHERE user_id=:user_id;"
+				cursor = g.conn.execute(text(sql_select_job_seeker).bindparams(user_id=user_id))
+				results_job_seeker = cursor.fetchall()
+				cursor.close()
+				sql_select_employer = "SELECT user_id FROM employer WHERE user_id=:user_id;"
+				cursor = g.conn.execute(text(sql_select_employer).bindparams(user_id=user_id))
+				results_employer = cursor.fetchall()
+				cursor.close()
+				if len(results_job_seeker) == 1:
+					user_type = 'job_seeker'
+				elif len(results_employer) == 1:
+					user_type = 'employer'
+				session['user_id'] = user_id
+				session['user_type'] = user_type
+				
 				return redirect('/another')
 			else:
-				return '用户名或密码不正确'
+				return 'Wrong user_id or password'
 	return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -199,8 +213,43 @@ def register():
 		g.conn.execute(insert_employer.bindparams(user_id=user_id, title=title, company_name=company_name, industry=industry, average_salary=average_salary, website=website))
 
 	# Redirect to the login page after successful registration
+	g.conn.commit()
 	return redirect('/login')
 
+@app.route('/blog')
+def blog():
+    # Get user id from session
+    user_id = session['user_id']
+    
+    # Get recommended blogs based on user interests
+    recommended_blogs = []
+    if user_id:
+        sql_select = text('''
+            SELECT b.* 
+            FROM blog b, follow f, blog_posts p
+            where b.blog_id=p.blog_id
+	    	and f.user_id=p.user_id
+            and f.follower_id=:user_id;
+        ''')
+        cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+        recommended_blogs = cursor.fetchall()
+        cursor.close()
+
+    # Get user's liked blogs
+    liked_blogs = []
+    if user_id:
+        sql_select = text('''
+            SELECT b.*
+            FROM blog b,likes l
+            WHERE b.blog_id=l.blog_id
+			and l.user_id = :user_id;
+        ''')
+        cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+        liked_blogs = cursor.fetchall()
+        cursor.close()
+
+    # Render the blog page
+    return render_template('blog.html', recommended_blogs=recommended_blogs, liked_blogs=liked_blogs)
 
 
 if __name__ == "__main__":

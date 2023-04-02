@@ -3,6 +3,16 @@
     <title>Another Page</title>
   </head>
   <body>
-    <h1>Welcome, {{ session['user_id'] }}!</h1>
+    <h1>Welcome, {{ session['user_id'] }}!
+        {% if session['user_type'] == 'employer' %}
+            <p>You are an employer!</p>
+        {% elif session['user_type'] == 'job_seeker' %}
+            <p>You are a job seeker!</p>
+        {% endif %}
+    </h1>
+
+    <a href="/blog">Blog</a>
+    <a href="/people">People</a>
+    <a href="/job">Job</a>
   </body>
 </html>
