@@ -757,6 +757,7 @@ def generate_education_id(user_id):
 
 if __name__ == "__main__":
 	import click
+	app.run(host='0.0.0.0', port=8111)
 	app.debug = True
 	@click.command()
 	@click.option('--debug', is_flag=True)
