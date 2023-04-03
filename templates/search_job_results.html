@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Search Results</title>
+  </head>
+  <body>
+    <h1>Search Results</h1>
+    
+    {% if search_results %}
+        <ul>
+            {% for job in search_results %}
+            <div>
+                Job Title: {{ job[3] }}
+            </div>
+            <div>
+                Company: {{ job[1] }}
+            </div>
+            <div>
+                DEADLINE: {{ job[2] }}
+            </div>
+            <div>
+                IS_INTERN: {{ job[4] }}
+            </div>
+            <div>
+                CITY: {{ job[5] }}
+            </div>
+            <div>
+                SALARY: {{ job[7] }}
+            </div>
+            <div>
+                Industry: {{ job[8] }}
+            </div>
+            <div>
+                Skills: {{ job[9] }}
+            </div>
+            <div>
+                Degree: {{ job[10] }}
+            </div>
+            <div>
+                Major: {{ job[11] }}
+            </div>
+            <div>
+                Experience: {{ job[12] }}
+            </div>
+            <div>
+                Job Description: {{ job[13] }}
+            </div>
+            <div>
+                Poster: {{ job[15] }}
+            </div>
+            <form method="post" action="/job/apply">
+                <input type="hidden" name="job_id" value="{{ job[0] }}">
+                <label for="cover_letter">Cover Letter:</label><br>
+                <textarea name="cover_letter" id="cover_letter" rows="10" cols="50"></textarea><br>
+                <input type="submit" value="Apply">
+            </form>
+            <br>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No recommended jobs found.</p>
+{% endif %}
+    <p><a href="/job">Return to Job</a></p>
+  </body>
+</html>

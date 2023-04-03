@@ -291,7 +291,7 @@ def search_blog():
         return "Please enter a keyword."
     
     # Perform search
-    sql_search = text("SELECT * FROM blog WHERE LOWER(title) LIKE :keyword OR LOWER(content) LIKE :keyword OR lOWER(keywords) LIKE :keyword;")
+    sql_search = text("SELECT * FROM blog WHERE LOWER(title) LIKE '%' || :keyword || '%' OR LOWER(content) LIKE '%' || :keyword || '%' OR lOWER(keywords) LIKE '%' || :keyword || '%' OR LOWER(author_name) LIKE '%' || :keyword || '%';")
     search_results = g.conn.execute(sql_search.bindparams(keyword=f"%{keyword}%")).fetchall()
     
     # Render search results in a new template
@@ -411,10 +411,11 @@ def search_people():
     sql_search = text('''SELECT u.* 
 		FROM p_user u left join job_seeker j on u.user_id=j.user_id
 			left join employer e on u.user_id=e.user_id
-		WHERE LOWER(u.first_name) LIKE :keyword OR LOWER(u.last_name) LIKE :keyword 
-		OR lOWER(j.skills) LIKE :keyword
-		OR LOWER(e.company_name) LIKE :keyword
-		OR LOWER(e.Industry) LIKE :keyword
+		WHERE LOWER(u.first_name) LIKE '%' || :keyword || '%' OR LOWER(u.last_name) LIKE '%' || :keyword || '%' 
+		OR lOWER(j.skills) LIKE '%' || :keyword || '%'
+		OR LOWER(e.company_name) LIKE '%' || :keyword || '%'
+		OR LOWER(e.Industry) LIKE '%' || :keyword || '%'
+		OR u.user_id LIKE '%' || :keyword || '%'
 		;
 		''')
     search_results = g.conn.execute(sql_search.bindparams(keyword=keyword)).fetchall()
@@ -494,6 +495,108 @@ def add_education():
     g.conn.commit()
 
     return redirect('/job_seeker_profile')
+
+@app.route('/job')
+def job():
+	# Get user id from session
+	user_id = session['user_id']
+
+	#get major skills
+	if user_id:
+		sql_select = text('''
+			select skills
+			from job_seeker
+			where user_id= :user_id;
+		'''
+		)
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		major_skills = cursor.fetchone()[0]
+		cursor.close()
+	#preprocess the skills
+	skills=major_skills.lower().strip().split()
+	#get targeted position
+	if user_id:
+		sql_select = text('''
+		select targeted_position
+		from job_seeker
+		where user_id= :user_id;
+		'''
+		)
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		targeted_position = cursor.fetchone()[0]
+		cursor.close()
+
+
+
+	# Get recommended jobs based on user skills and experiences
+	recommended_jobs = []
+	if user_id:
+		sql_select = "SELECT j.* FROM job j, applies a where j.job_id=a.job_id And j.job_id not in (select job_id from applies where user_id = :user_id) And ("
+		for skill in skills:
+			sql_select += f"LOWER(required_skills) LIKE '%{skill}%' OR LOWER(JOB_DESCRIPTION) LIKE '%{skill}%' OR "
+		sql_select += "LOWER(job_title) LIKE '%' || :targeted_position || '%');"
+		cursor = g.conn.execute(text(sql_select).bindparams(targeted_position=targeted_position, user_id=user_id))
+		recommended_jobs = cursor.fetchall()
+		cursor.close()
+
+	# Get user's applied jobs
+	applied_jobs = []
+	if user_id:
+		sql_select = text('''
+			SELECT j.*, a.cover_letter
+			FROM job j, applies a
+			WHERE j.job_id=a.job_id AND a.user_id=:user_id;
+		''')
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		applied_jobs = cursor.fetchall()
+		cursor.close()
+
+	# Render the job page
+	return render_template('job.html', recommended_jobs=recommended_jobs, applied_jobs=applied_jobs)
+
+@app.route('/job/apply', methods=['POST'])
+def apply_job():
+    user_id = session['user_id']
+    job_id = request.form.get('job_id')
+    cover_letter=request.form.get('cover_letter')
+    if not all([user_id, job_id, cover_letter]):
+        return "Error"
+    sql_check = text("SELECT COUNT(*) FROM applies WHERE job_id = :job_id AND user_id = :user_id;")
+    result = g.conn.execute(sql_check.bindparams(job_id=job_id, user_id=user_id)).scalar()
+    
+    if result > 0:
+        return "You have already applied this job."    
+    applied_date = datetime.utcnow()
+    sql_insert = text("INSERT INTO applies (user_id, job_id, applied_date, cover_letter) VALUES (:user_id, :job_id, :applied_date, :cover_letter);")
+    g.conn.execute(sql_insert.bindparams(job_id=job_id, user_id=user_id, applied_date=applied_date, cover_letter=cover_letter))
+    g.conn.commit()
+    return redirect('/job')
+
+@app.route('/job/search', methods=['GET'])
+def search_job():
+	keyword = request.args.get('keyword').lower()
+
+	if not keyword:
+		return "Please enter a keyword."
+
+	# Perform search
+	sql_search = text('''SELECT * FROM job 
+					WHERE LOWER(job_title) LIKE '%' || :keyword || '%'
+					OR LOWER(company_name) LIKE '%' || :keyword || '%'
+					OR lOWER(city) LIKE '%' || :keyword || '%' 
+					OR lOWER(industry) LIKE '%' || :keyword || '%' 
+					OR lOWER(required_skills) LIKE '%' || :keyword || '%' 
+					OR lOWER(required_major) LIKE '%' || :keyword || '%'
+					OR lOWER(job_description) LIKE '%' || :keyword || '%'
+					;
+					''')
+	search_results = g.conn.execute(sql_search.bindparams(keyword=keyword)).fetchall()
+
+	# Render search results in a new template
+	print(sql_search.bindparams(keyword=keyword))
+	print(search_results)
+	return render_template("search_job_results.html", search_results=search_results)
+
 
 def generate_blog_id():
     while True:
