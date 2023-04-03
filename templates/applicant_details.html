@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Job Seeker Profile</title>
+  </head>
+  <body>
+    <h1>Details for {{user_info[0]}}</h1>
+    <!-- user_info and job_seeker-->
+
+
+
+    <ul>
+        <li>First Name: {{ user_info[4] }}</li>
+        <li>Last Name: {{ user_info[5] }}</li>
+        <li>Email: {{ user_info[3] }}</li>
+        <li>Phone: {{ user_info[11] }}</li>
+        <li>CITY: {{ user_info[8] }}</li>
+        <li>STATE: {{ user_info[9] }}</li>
+        <li>AGE: {{ user_info[13] }}</li>
+        <li>SKILLS: {{ job_seeker[1] }}</li>
+        <li>Targeted_position: {{ job_seeker[2] }}</li>
+        <li>Resume: {{ job_seeker[5] }}</li>
+
+    </ul>    
+   
+
+
+    <!-- Experience -->
+    <h2>Work Experiences</h2>
+    {% if experiences %}    
+        <ul>
+            {% for experience in experiences %}
+                <div>
+                    <p>Experience ID: {{ experience[1] }}</p>
+                    <p>DATE_OF_START: {{ experience[2] }}</p>
+                    <p>DATE_OF_END: {{ experience[3] }}</p>
+                    <p>MONTHS: {{ experience[4] }}</p>
+                    <p>COMPANY_NAME: {{ experience[5] }}</p>
+                    <p>CITY: {{ experience[6] }}</p>
+                    <p>STATE: {{ experience[7] }}</p>
+                    <p>JOB_TITLE: {{ experience[8] }}</p>
+                    <p>MAIN_SKILLS: {{ experience[9] }}</p>
+                    <p>DESCRIPTION: {{ experience[10] }}</p>
+                </div>
+                <br>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No experience yet .</p>
+    {% endif %}
+    <br>
+    <!-- Education -->
+    <h2>Education</h2>
+    {% if educations %}
+        <ul>            
+            {% for education in educations %}
+                <div>
+                    <p>Education ID: {{ education[1] }}</p>
+                    <p>DATE_OF_START: {{ education[2] }}</p>
+                    <p>DATE_OF_END: {{ education[3] }}</p>
+                    <p>DEGREE: {{ education[4] }}</p>
+                    <p>MAJOR: {{ education[5] }}</p>
+                    <p>UNIVERSITY: {{ education[6] }}</p>
+                    <p>CITY: {{ education[6] }}</p>
+                    <p>COUNTRY: {{ education[7] }}</p>
+                </div>
+                <br>
+            {% endfor %}
+        </ul>    
+    {% else %}
+        <p>No experience yet .</p>
+    {% endif %}
+    <br>
+    
+    
+    <a href="/another">Back to Home</a>
+  </body>
+</html>

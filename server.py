@@ -16,6 +16,7 @@ from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response,  session
 import psycopg2
 from uuid import uuid4
+from collections import defaultdict
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app.secret_key = 'cs4111'
@@ -597,6 +598,102 @@ def search_job():
 	print(search_results)
 	return render_template("search_job_results.html", search_results=search_results)
 
+@app.route('/job_post', methods=['GET', 'POST'])
+def job_post():
+	user_id=session['user_id']
+	if request.method == 'POST':
+		company_name = request.form.get('company_name')
+		deadline = request.form.get('deadline')
+		job_title = request.form.get('job_title')
+		is_intern = request.form.get('is_intern')
+		city = request.form.get('city')
+		state= request.form.get('state')
+		salary = request.form.get('salary')
+		industry = request.form.get('industry')
+		required_skills = request.form.get('required_skills')
+		required_degree = request.form.get('required_degree')
+		required_major = request.form.get('required_major')
+		required_experiences = request.form.get('required_experiences')
+		job_description = request.form.get('job_description')
+		job_posted_date = datetime.utcnow()
+
+		# Generate a unique job_id
+		job_id = generate_job_id()
+
+		# Insert blog into the blog table
+		sql_insert_blog = text('''INSERT INTO job (job_id, company_name, deadline, job_title, is_intern, city, 
+								state, salary, industry, required_skills, required_degree, required_major, required_experiences, job_description, 
+								job_posted_date, user_id) 
+								VALUES (:job_id, :company_name, :deadline, :job_title, :is_intern, :city, 
+								:state, :salary, :industry, :required_skills, :required_degree, :required_major, :required_experiences, :job_description, 
+								:job_posted_date, :user_id);''')
+		g.conn.execute(sql_insert_blog.bindparams(job_id=job_id, company_name=company_name, deadline=deadline, job_title=job_title, 
+					    		is_intern=is_intern, city=city, 
+								state=state, salary=salary, industry=industry, required_skills=required_skills, required_degree=required_degree
+								, required_major=required_major, required_experiences=required_experiences, job_description=job_description, 
+								job_posted_date=job_posted_date, user_id=user_id))
+
+
+		# Commit the changes to the database
+		g.conn.commit()
+
+		# Redirect the user to the blog page
+		return redirect('/another')
+
+@app.route('/view_applicants')
+def view_applicants():
+    user_id = session['user_id']
+    
+    # select from job and applies
+    sql_select = text('''
+        SELECT j.job_id, j.company_name, j.job_title, j.job_posted_date, array_agg(ja.user_id), array_agg(ja.cover_letter)
+        FROM job j
+        JOIN applies ja ON j.job_id = ja.job_id
+        WHERE j.user_id = :user_id
+        GROUP BY j.job_id, j.company_name, j.job_title, j.job_posted_date
+        ORDER BY j.job_posted_date DESC;
+    ''')
+    job_applicants = g.conn.execute(sql_select.bindparams(user_id=user_id)).fetchall()
+    
+    return render_template('view_applicants.html', job_applicants=job_applicants)
+
+@app.route('/user/<user_id>')
+def user(user_id):
+	#select from p_user
+	sql_select=text('''
+		select *
+		From p_user
+		where user_id= :user_id;
+	''')
+	user_info =  g.conn.execute(sql_select.bindparams(user_id=user_id)).fetchone()
+	# select from job_seeker
+	sql_select = text('''
+		SELECT *
+		FROM job_seeker
+		WHERE user_id = :user_id;
+	''')
+	job_seeker = g.conn.execute(sql_select.bindparams(user_id=user_id)).fetchone()
+
+
+	# select from experiences
+	sql_select = text('''
+		SELECT *
+		FROM experience
+		WHERE user_id = :user_id
+		ORDER BY date_of_end DESC;
+	''')
+	experiences = g.conn.execute(sql_select.bindparams(user_id=user_id)).fetchall()
+
+	# select from educations
+	sql_select = text('''
+		SELECT *
+		FROM education
+		WHERE user_id = :user_id
+		ORDER BY date_of_end DESC;
+	''')
+	educations = g.conn.execute(sql_select.bindparams(user_id=user_id)).fetchall()
+
+	return render_template('applicant_details.html',user_info=user_info, job_seeker=job_seeker, experiences=experiences, educations=educations)
 
 def generate_blog_id():
     while True:
@@ -610,6 +707,19 @@ def generate_blog_id():
         # If the generated blog_id is not in the database, return it
         if result[0] == 0:
             return blog_id
+	
+def generate_job_id():
+    while True:
+        unique_id = str(uuid4())[:4]  # Generate a unique 4-character ID
+        job_id = 'j' + unique_id
+
+        # Check if the generated job_id already exists in the database
+        sql_check = text("SELECT COUNT(*) FROM job WHERE job_id = :job_id;")
+        result = g.conn.execute(sql_check.bindparams(job_id=job_id)).fetchone()
+
+        # If the generated job_id is not in the database, return it
+        if result[0] == 0:
+            return job_id
 
 def generate_experience_id(user_id):
 	while True:

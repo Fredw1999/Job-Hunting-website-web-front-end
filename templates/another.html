@@ -20,7 +20,37 @@
     <a href="/job_seeker_profile">My Profile</a>
     
     {%else%}
-    <a href="/post_job">Post a Job</a>
+    <h2>Post a Job</h2>
+    <form method="post" action="/job_post">
+      <label for="company_name">Company Name:</label><br>
+      <input type="text" name="company_name" required><br>
+      <label for="deadline">Deadline:</label><br>
+      <input type="date" name="deadline" required><br>
+      <label for="job_title">Job Title:</label><br>
+      <input type="text" name="job_title" required><br>
+      <label for="is_intern">Is Intern:</label><br>
+      <input type="text" name="is_intern" required><br>
+      <label for="city">City:</label><br>
+      <input type="text" name="city" required><br>
+      <label for="state">State:</label><br>
+      <input type="text" name="state" required><br>
+      <label for="salary">Salary:</label><br>
+      <input type="text" name="salary" required><br>
+      <label for="industry">Industry:</label><br>
+      <input type="text" name="industry" required><br>
+      <label for="required_skills">Required Skills:</label><br>
+      <textarea name="required_skills" required></textarea><br>
+      <label for="required_degree">Required Degree:</label><br>
+      <input type="text" name="required_degree" required><br>
+      <label for="required_major">Required Major:</label><br>
+      <input type="text" name="required_major" required><br>
+      <label for="required_experiences">Required Experiences:</label><br>
+      <textarea name="required_experiences" required></textarea><br>
+      <label for="job_description">Job Description:</label><br>
+      <textarea name="job_description" required></textarea><br>
+      <input type="submit" value="Submit">
+    </form>
+    <br>
     <a href="/view_applicants">View Applicants</a>
     {% endif %}
     

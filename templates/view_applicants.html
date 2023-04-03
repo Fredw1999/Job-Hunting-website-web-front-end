@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>View Applicants</h1>
+    {% if job_applicants %}
+        <ul>
+            {% for job in job_applicants %}
+            <li>
+                Job ID: {{ job[0] }}<br>
+                Company: {{ job[1] }}<br>
+                Job Title: {{ job[2] }}<br>
+                Posted Date: {{ job[3] }}<br>
+                <h4>Applicants:</h4>
+                <ul>
+                    {% for i in range(job[4]|length) %}
+                    <li>
+                        Applicant's User_id: <a href="/user/{{ job[4][i] }}">{{ job[4][i] }}</a><br>
+                        Cover Letter: {{ job[5][i] }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            <br>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You haven't posted any jobs yet.</p>
+    {% endif %}
+    <a href="/another">Back to Home</a>
+</body>
+</html>
+
