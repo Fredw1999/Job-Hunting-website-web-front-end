@@ -17,6 +17,7 @@ from flask import Flask, request, render_template, g, redirect, Response,  sessi
 import psycopg2
 from uuid import uuid4
 from collections import defaultdict
+print("start")
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app.secret_key = 'cs4111'
@@ -74,6 +75,7 @@ def before_request():
 	"""
 	try:
 		g.conn = engine.connect()
+		print("br")
 	except:
 		print("uh oh, problem connecting to database")
 		import traceback; traceback.print_exc()
@@ -111,6 +113,7 @@ def teardown_request(exception):
 #default login page
 @app.route('/')
 def login():
+    print("hellow")	
     return render_template('login.html')
 
 #register page
