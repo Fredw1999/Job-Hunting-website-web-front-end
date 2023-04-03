@@ -49,19 +49,7 @@ engine = create_engine(DATABASEURI,future=True)
 # Example of running queries in your database
 # Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
 #
-'''with engine.connect() as conn:
-	#create_table_command = """
-	#CREATE TABLE IF NOT EXISTS test (
-	#	id serial,
-	#	name text
-	#)
-	#"""
-	#res = conn.execute(text(create_table_command))
-	#insert_table_command = """INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace')"""
-	#res = conn.execute(text(insert_table_command))
-	# you need to commit for create, insert, update queries to reflect
-	conn.commit()
-	'''
+
 
 
 @app.before_request
@@ -756,29 +744,30 @@ def generate_education_id(user_id):
 
 
 if __name__ == "__main__":
-	import click
-	app.run(host='0.0.0.0', port=8111)
-	app.debug = True
-	@click.command()
-	@click.option('--debug', is_flag=True)
-	@click.option('--threaded', is_flag=True)
-	@click.argument('HOST', default='127.0.0.1')
-	@click.argument('PORT', default=8111, type=int)
-	def run(debug, threaded, host, port):
-		"""
-		This function handles command line parameters.
-		Run the server using:
+    import click
 
-			python server.py
+    app.debug = True
 
-		Show the help text using:
+    @click.command()
+    @click.option('--debug', is_flag=True)
+    @click.option('--threaded', is_flag=True)
+    @click.argument('HOST', default='0.0.0.0')
+    @click.argument('PORT', default=8111, type=int)
+    def run(debug, threaded, host, port):
+        """
+        This function handles command line parameters.
+        Run the server using:
 
-			python server.py --help
+            python server.py
 
-		"""
+        Show the help text using:
 
-		HOST, PORT = host, port
-		print("running on %s:%d" % (HOST, PORT))
-		app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+            python server.py --help
 
-run()
+        """
+
+        HOST, PORT = host, port
+        print("running on %s:%d" % (HOST, PORT))
+        app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+
+    run()
