@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Search Results</title>
+  </head>
+  <body>
+    <h1>Search Results</h1>
+    
+    {% if search_results %}
+        <ul>
+            {% for user in search_results %}
+                <div>
+                    USER_ID:{{user[0]}}
+                </div>
+                <div>    
+                    Email:{{user[3]}}
+                </div>
+                <div>
+                    NAME:{{user[4]}} {{user[5]}}
+                </div> 
+                <form method="post" action="/people/follow">
+                    <input type="hidden" name="user_id" value="{{user[0]}}">
+                    <input type="submit" value="follow">
+                </form><br>
+            {% endfor %}
+        </ul>
+    {% else %}
+      <p>No People found matching your search.</p>
+    {% endif %}
+    <p><a href="/people">Return to People</a></p>
+  </body>
+</html>

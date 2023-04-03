@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Job Seeker Profile</title>
+  </head>
+  <body>
+    <h1>Welcome, {{ session['user_id'] }}!</h1>
+
+    <!-- Experience Form -->
+    <h2>Add Work Experience</h2>
+    <form action="/add_experience" method="POST">
+        <label>DATE_OF_START: <input type="date" name="date_of_start" required></label><br>
+        <label>DATE_OF_END: <input type="date" name="date_of_end" required></label><br>
+        <label>MONTHS: <input type="number" name="months" required></label><br>
+        <label>COMPANY_NAME: <input type="text" name="company_name" required></label><br>
+        <label>CITY: <input type="text" name="city" required></label><br>
+        <label>STATE: <input type="text" name="state" required></label><br>
+        <label>JOB_TITLE: <input type="text" name="job_title" required></label><br>
+        <label>MAIN_SKILLS: <input type="text" name="main_skills" required></label><br>
+        <label>DESCRIPTION: <input type="text" name="description" required></label><br>
+        <input type="submit" value="Submit Experience">
+    </form>
+
+    <!-- Education Form -->
+    <h2>Add Education</h2>
+    <form action="/add_education" method="POST">
+        <label>DATE_OF_START: <input type="date" name="date_of_start" required></label><br>
+        <label>DATE_OF_END: <input type="date" name="date_of_end" required></label><br>
+        <label>DEGREE ('High School', 'Bachelor', 'Master', 'PhD'): <input type="text" name="degree" required></label><br>
+        <label>MAJOR: <input type="text" name="major" required></label><br>
+        <label>UNIVERSITY: <input type="text" name="university" required></label><br>
+        <label>CITY: <input type="text" name="city" required></label><br>
+        <label>COUNTRY: <input type="text" name="country" required></label><br>
+        <input type="submit" value="Submit Education">
+    </form>
+
+    <!-- Experience -->
+    <h2>Your Work Experiences</h2>
+    {% if experiences %}    
+        <ul>
+            {% for experience in experiences %}
+                <div>
+                    <p>Experience ID: {{ experience[1] }}</p>
+                    <p>DATE_OF_START: {{ experience[2] }}</p>
+                    <p>DATE_OF_END: {{ experience[3] }}</p>
+                    <p>MONTHS: {{ experience[4] }}</p>
+                    <p>COMPANY_NAME: {{ experience[5] }}</p>
+                    <p>CITY: {{ experience[6] }}</p>
+                    <p>STATE: {{ experience[7] }}</p>
+                    <p>JOB_TITLE: {{ experience[8] }}</p>
+                    <p>MAIN_SKILLS: {{ experience[9] }}</p>
+                    <p>DESCRIPTION: {{ experience[10] }}</p>
+                </div>
+                <br>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No experience yet .</p>
+    {% endif %}
+    <br>
+    <!-- Education -->
+    <h2>Your Education</h2>
+    {% if educations %}
+        <ul>            
+            {% for education in educations %}
+                <div>
+                    <p>Education ID: {{ education[1] }}</p>
+                    <p>DATE_OF_START: {{ education[2] }}</p>
+                    <p>DATE_OF_END: {{ education[3] }}</p>
+                    <p>DEGREE: {{ education[4] }}</p>
+                    <p>MAJOR: {{ education[5] }}</p>
+                    <p>UNIVERSITY: {{ education[6] }}</p>
+                    <p>CITY: {{ education[6] }}</p>
+                    <p>COUNTRY: {{ education[7] }}</p>
+                </div>
+                <br>
+            {% endfor %}
+        </ul>    
+    {% else %}
+        <p>No experience yet .</p>
+    {% endif %}
+    <br>
+    
+    
+    <a href="/">Back to Home</a>
+  </body>
+</html>

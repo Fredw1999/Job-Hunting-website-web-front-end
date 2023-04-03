@@ -33,7 +33,7 @@
     {% endif %}
     
     <h2>Search</h2>
-    <form method="get" action="/blog/search">
+    <form id="search-form" method="get" action="/blog/search">
       <input type="text" name="keyword">
       <input type="submit" value="Search">
     </form>
@@ -54,14 +54,39 @@
         <div>
             Content:{{blog[4]}}
         </div>
+        <br>
+
         {% endfor %}
       </ul>
     {% else %}
       <p>You haven't liked any blogs yet.</p>
     {% endif %}
     
+    <h2>My Blogs</h2>
+    {% if my_blogs %}
+      <ul>
+        {% for blog in my_blogs %}
+        <div>
+            Title:{{blog[1]}}
+        </div>
+        <div>    
+            Author:{{blog[2]}}
+        </div>
+        <div>
+            Keywords:{{blog[3]}}
+        </div>    
+        <div>
+            Content:{{blog[4]}}
+        </div>
+        <br>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>You haven't posted any blogs yet.</p>
+    {% endif %}
+
     <h2>Post Blog</h2>
-    <form method="post" action="/blog">
+    <form method="post" action="/blog_post">
       <label>Title:</label>
       <input type="text" name="title"><br>
       <label>Keywords:</label>
@@ -72,6 +97,7 @@
       <textarea name="content" rows="10" cols="50"></textarea><br>
       <input type="submit" value="Post">
     </form>
-    
+    <br>
+    <a href="/another">Back to Home</a>
   </body>
 </html>

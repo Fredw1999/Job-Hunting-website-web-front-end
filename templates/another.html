@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <title>Another Page</title>
@@ -11,8 +12,17 @@
         {% endif %}
     </h1>
 
+
     <a href="/blog">Blog</a>
     <a href="/people">People</a>
+    {% if session['user_type'] == 'job_seeker' %}
     <a href="/job">Job</a>
+    <a href="/job_seeker_profile">My Profile</a>
+    
+    {%else%}
+    <a href="/post_job">Post a Job</a>
+    <a href="/view_applicants">View Applicants</a>
+    {% endif %}
+    
   </body>
 </html>

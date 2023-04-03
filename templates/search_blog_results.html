@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Search Results</title>
+  </head>
+  <body>
+    <h1>Search Results</h1>
+    
+    {% if search_results %}
+      <ul>
+        {% for blog in search_results %}
+            <div>
+                Title:{{blog[1]}}
+            </div>
+            <div>    
+                Author:{{blog[2]}}
+            </div>
+            <div>
+                Keywords:{{blog[3]}}
+            </div>    
+            <div>
+                Content:{{blog[4]}}
+            </div>
+            <!-- Add the like form for each search result -->
+            <form method="post" action="/blog/like">
+                <input type="hidden" name="blog_id" value="{{blog[0]}}">
+                <input type="submit" value="Like">
+            </form>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No blogs found matching your search.</p>
+    {% endif %}
+    
+    <p><a href="/blog">Return to Blog</a></p>
+  </body>
+</html>

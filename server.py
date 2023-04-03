@@ -15,6 +15,7 @@ from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response,  session
 import psycopg2
+from uuid import uuid4
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
 app.secret_key = 'cs4111'
@@ -219,38 +220,48 @@ def register():
 
 @app.route('/blog')
 def blog():
-    # Get user id from session
-    user_id = session['user_id']
-    
-    # Get recommended blogs based on user interests
-    recommended_blogs = []
-    if user_id:
-        sql_select = text('''
-            SELECT b.* 
-            FROM blog b, follow f, blog_posts p
-            where b.blog_id=p.blog_id
-	    	and f.user_id=p.user_id
-            and f.follower_id=:user_id;
-        ''')
-        cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
-        recommended_blogs = cursor.fetchall()
-        cursor.close()
+	# Get user id from session
+	user_id = session['user_id']
 
-    # Get user's liked blogs
-    liked_blogs = []
-    if user_id:
-        sql_select = text('''
-            SELECT b.*
-            FROM blog b,likes l
-            WHERE b.blog_id=l.blog_id
+	# Get recommended blogs based on user interests
+	recommended_blogs = []
+	if user_id:
+		sql_select = text('''
+			SELECT b.* 
+			FROM blog b, follow f, blog_posts p
+			where b.blog_id=p.blog_id
+			and f.user_id=p.user_id
+			and f.follower_id=:user_id;
+		''')
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		recommended_blogs = cursor.fetchall()
+		cursor.close()
+
+	# Get user's liked blogs
+	liked_blogs = []
+	if user_id:
+		sql_select = text('''
+			SELECT b.*
+			FROM blog b,likes l
+			WHERE b.blog_id=l.blog_id
 			and l.user_id = :user_id;
-        ''')
-        cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
-        liked_blogs = cursor.fetchall()
-        cursor.close()
+		''')
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		liked_blogs = cursor.fetchall()
+		cursor.close()
+	
+	#Get user's own blogs
+	my_blogs = []
+	if user_id:
+		sql_select = text("SELECT b.* FROM blog b, blog_posts p WHERE b.blog_id=p.blog_id and p.user_id = :user_id;")
+		cursor = g.conn.execute(sql_select.bindparams(user_id=user_id))
+		my_blogs=cursor.fetchall()
+		cursor.close()
+    	
+    	
 
     # Render the blog page
-    return render_template('blog.html', recommended_blogs=recommended_blogs, liked_blogs=liked_blogs)
+	return render_template('blog.html', recommended_blogs=recommended_blogs, liked_blogs=liked_blogs, my_blogs=my_blogs)
 
 
 @app.route('/blog/like', methods=['POST'])
@@ -272,6 +283,260 @@ def like_blog():
     
     return redirect('/blog')
 
+@app.route('/blog/search', methods=['GET'])
+def search_blog():
+    keyword = request.args.get('keyword').lower()
+    
+    if not keyword:
+        return "Please enter a keyword."
+    
+    # Perform search
+    sql_search = text("SELECT * FROM blog WHERE LOWER(title) LIKE :keyword OR LOWER(content) LIKE :keyword OR lOWER(keywords) LIKE :keyword;")
+    search_results = g.conn.execute(sql_search.bindparams(keyword=f"%{keyword}%")).fetchall()
+    
+    # Render search results in a new template
+    return render_template("search_blog_results.html", search_results=search_results)
+
+
+
+
+	
+@app.route('/blog_post', methods=['GET', 'POST'])
+def blog_post():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        keywords = request.form.get('keywords')
+        author_name = request.form.get('author_name')
+        content = request.form.get('content')
+
+        # Generate a unique blog_id
+        blog_id = generate_blog_id()
+
+        # Insert blog into the blog table
+        sql_insert_blog = text("INSERT INTO blog (blog_id, title, author_name, keywords, content) VALUES (:blog_id, :title, :author_name, :keywords, :content);")
+        g.conn.execute(sql_insert_blog.bindparams(blog_id=blog_id, title=title, author_name=author_name, keywords=keywords, content=content))
+
+        # Insert blog_post into the blog_post table
+        user_id = session['user_id']
+        post_time = datetime.utcnow()
+        sql_insert_blog_post = text("INSERT INTO blog_posts (blog_id, user_id, blog_posted_date) VALUES (:blog_id, :user_id, :post_time);")
+        g.conn.execute(sql_insert_blog_post.bindparams(blog_id=blog_id, user_id=user_id, post_time=post_time))
+
+        # Commit the changes to the database
+        g.conn.commit()
+
+        # Redirect the user to the blog page
+        return redirect('/blog')
+
+
+@app.route('/people')
+def people():
+    # Get the user's id
+    user_id = session['user_id']
+
+    # Get suggested users
+    suggested_users = []
+    sql_suggested_users = text("""
+        SELECT distinct(u.*) 
+		FROM p_user u left join follow f on u.user_id=f.user_id 
+		Where f.follower_id in (
+			SELECT user_id
+			FROM follow 
+			Where follower_id = :user_id
+			)
+		And u.user_id != :user_id
+		Union
+		SELECT distinct(u.*) 
+		FROM p_user u left join follow f on u.user_id=f.follower_id 
+		Where f.user_id in(
+			SELECT user_id 
+			FROM follow 
+			Where follower_id = :user_id
+			)
+		And u.user_id != :user_id
+		;
+
+    """)
+    result = g.conn.execute(sql_suggested_users.bindparams(user_id=user_id))
+    for row in result:
+        suggested_users.append(row)
+    result.close()
+    
+	
+    # Get followed users
+    followed_users = []
+    sql_followed_users = text("""
+        SELECT *
+        FROM p_user
+        WHERE user_id IN (
+            SELECT user_id
+            FROM follow
+            WHERE follower_id = :user_id
+        );
+    """)
+    result = g.conn.execute(sql_followed_users.bindparams(user_id=user_id))
+    for row in result:
+        followed_users.append(row)
+    result.close()
+
+    return render_template('people.html', suggested_users=suggested_users,followed_users=followed_users)
+
+@app.route('/people/follow', methods=['POST'])
+def follow_people():
+    user_id = session['user_id']
+    followee_id = request.form.get('user_id')
+    
+    if not all([user_id, followee_id]):
+        return "Error"
+    sql_check = text("SELECT COUNT(*) FROM follow WHERE user_id = :followee_id AND follower_id = :user_id;")
+    result = g.conn.execute(sql_check.bindparams(followee_id=followee_id, user_id=user_id)).scalar()
+    
+    if result > 0:
+        return "You have already followed this user."    
+    liked_time = datetime.utcnow()
+    sql_insert = text("INSERT INTO follow (user_id, follower_id, followed_time) VALUES (:followee_id, :user_id, :liked_time);")
+    g.conn.execute(sql_insert.bindparams(followee_id=followee_id, user_id=user_id, liked_time=liked_time))
+    g.conn.commit()
+    return redirect('/people')
+
+
+@app.route('/people/search', methods=['GET'])
+def search_people():
+    keyword = request.args.get('keyword').lower()
+    
+    if not keyword:
+        return "Please enter a keyword."
+    
+    # Perform search
+    sql_search = text('''SELECT u.* 
+		FROM p_user u left join job_seeker j on u.user_id=j.user_id
+			left join employer e on u.user_id=e.user_id
+		WHERE LOWER(u.first_name) LIKE :keyword OR LOWER(u.last_name) LIKE :keyword 
+		OR lOWER(j.skills) LIKE :keyword
+		OR LOWER(e.company_name) LIKE :keyword
+		OR LOWER(e.Industry) LIKE :keyword
+		;
+		''')
+    search_results = g.conn.execute(sql_search.bindparams(keyword=keyword)).fetchall()
+    
+    # Render search results in a new template
+    return render_template("search_people_results.html", search_results=search_results)
+
+@app.route('/job_seeker_profile')
+def job_seeker_profile():
+	if session['user_type'] == 'job_seeker':
+		user_id = session['user_id']
+
+		# sql experience
+		sql_experience=text(
+		"SELECT * FROM EXPERIENCE WHERE USER_ID = :user_id;"
+		)
+		experiences = g.conn.execute(sql_experience.bindparams(user_id=user_id)).fetchall()
+
+		# sql education
+		sql_education=text(
+		"SELECT * FROM EDUCATION WHERE USER_ID = :user_id;"
+		)
+		educations = g.conn.execute(sql_education.bindparams(user_id=user_id)).fetchall()
+
+		return render_template('job_seeker_profile.html', experiences=experiences, educations=educations)
+	else:
+		return "Access denied. You must be a job seeker to view this page.", 403
+    
+# add experience
+@app.route('/add_experience', methods=['POST'])
+def add_experience():
+	# get experience from form
+	print(request.form)
+	user_id = session['user_id']
+	experience_id = generate_experience_id(user_id)
+	date_of_start = request.form['date_of_start']
+	date_of_end = request.form['date_of_end']
+	months = request.form['months']
+	company_name = request.form['company_name']
+	city = request.form['city']
+	state = request.form['state']
+	job_title = request.form['job_title']
+	main_skills = request.form['main_skills']
+	description = request.form['description']
+
+
+	# sql insert
+	sql_insert ="INSERT INTO EXPERIENCE (USER_ID, EXPERIENCE_ID, DATE_OF_START,date_of_end ,months, company_name, city,state , job_title,main_skills ,description) VALUES (:user_id, :experience_id, :date_of_start, :date_of_end ,:months, :company_name, :city, :state , :job_title, :main_skills ,:description);"
+	g.conn.execute(text(sql_insert).bindparams(user_id=user_id, experience_id=experience_id, date_of_start=date_of_start 
+			,date_of_end=date_of_end, months=months, company_name=company_name, city=city, state=state, job_title=job_title
+			, main_skills=main_skills, description=description))
+	g.conn.commit()
+
+	return redirect('/job_seeker_profile')
+
+# add education
+@app.route('/add_education', methods=['POST'])
+def add_education():
+    # get education from form
+    user_id = session['user_id']
+    education_id = generate_education_id(user_id)
+    date_of_start = request.form['date_of_start']
+    date_of_end = request.form['date_of_end']
+    degree = request.form['degree']
+    major = request.form['major']
+    city = request.form['city']
+    university = request.form['university']
+    country = request.form['country']
+
+    
+
+    # sql insert
+    sql_insert ="INSERT INTO education (USER_ID, education_id, DATE_OF_START,date_of_end ,degree, major, university, city, country) VALUES (:user_id, :education_id, :date_of_start, :date_of_end ,:degree, :major, :university, :city, :country);"
+
+    g.conn.execute(text(sql_insert).bindparams(user_id=user_id, education_id=education_id, date_of_start=date_of_start 
+		   ,date_of_end=date_of_end, degree=degree, major=major, city=city, country=country, university=university))
+    g.conn.commit()
+
+    return redirect('/job_seeker_profile')
+
+def generate_blog_id():
+    while True:
+        unique_id = str(uuid4())[:4]  # Generate a unique 4-character ID
+        blog_id = 'b' + unique_id
+
+        # Check if the generated blog_id already exists in the database
+        sql_check = text("SELECT COUNT(*) FROM blog WHERE blog_id = :blog_id;")
+        result = g.conn.execute(sql_check.bindparams(blog_id=blog_id)).fetchone()
+
+        # If the generated blog_id is not in the database, return it
+        if result[0] == 0:
+            return blog_id
+
+def generate_experience_id(user_id):
+	while True:
+		unique_id = str(uuid4())[:4]  # Generate a unique 4-character ID
+		experience_id = 'exp_' + unique_id
+		
+
+		# Check if the generated experience_id-user_id combo already exists in the database
+		sql_check = text("SELECT COUNT(*) FROM experience WHERE experience_id = :experience_id And user_id = :user_id;")
+		result = g.conn.execute(sql_check.bindparams(experience_id=experience_id,user_id=user_id)).fetchone()
+
+		# If the generated experience_id is not in the database, return it
+		if result[0] == 0:
+			return experience_id
+	
+def generate_education_id(user_id):
+	while True:
+		unique_id = str(uuid4())[:3]  # Generate a unique 3-character ID
+		education_id = 'ed' + unique_id
+
+		
+
+		# Check if the generated education_id already exists in the database
+		sql_check = text("SELECT COUNT(*) FROM education WHERE education_id = :education_id And user_id = :user_id;")
+		result = g.conn.execute(sql_check.bindparams(education_id=education_id,user_id=user_id)).fetchone()
+
+		# If the generated education_id is not in the database, return it
+		if result[0] == 0:
+			return education_id
+		
 
 
 if __name__ == "__main__":

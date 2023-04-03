@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>People You May Know</title>
+  </head>
+  <body>
+    <h1>People You May Know</h1>
+
+    <h2>Suggested Users</h2>
+    {% if suggested_users %}
+        <ul>
+            {% for user in suggested_users %}
+                <div>
+                    USER_ID:{{user[0]}}
+                </div>
+                <div>    
+                    Email:{{user[3]}}
+                </div>
+                <div>
+                    NAME:{{user[4]}} {{user[5]}}
+                </div>    
+                <form method="get" action="/people/follow">
+                    <input type="hidden" name="user_id" value="{{user[0]}}">
+                    <input type="submit" value="follow">
+                </form><br>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No suggested users at the moment.</p>
+    {% endif %}
+
+    <h2>People You Follow</h2>
+    {% if followed_users %}
+        <ul>
+            {% for user in followed_users %}
+                <div>
+                    USER_ID:{{user[0]}}
+                </div>
+                <div>    
+                    Email:{{user[3]}}
+                </div>
+                <div>
+                    NAME:{{user[4]}} {{user[5]}}
+                </div> 
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You are not following anyone yet.</p>
+    {% endif %}
+
+    <h2>Search Users</h2>
+    <form action="/people/search" method="get">
+        <label>Keyword: <input type="text" name="keyword" required></label><br>
+        <input type="submit" value="Search">
+    </form>
+
+    <a href="/another">Back to Home</a>
+  </body>
+</html>
